@@ -1,0 +1,27 @@
+html, body
+{
+	width: 21cm;
+}
+
+@page
+{
+	margin: 0;
+}
+
+.unprint
+{
+	display: none;
+}
+
+.chart_div
+{
+	break-inside: avoid;
+}
+
+.action-block,
+.action-block + .action-block,
+.action-block + div,
+.action-block + .action-block + div
+{
+	break-after: avoid;
+}

@@ -12,9 +12,9 @@
 	--background-color: #f0f0f0;
 	--foreground-color: #202020;
 
-	--action-block-color: #a0f0c0;
-	--input-block-color: #c0d0f0a0;
-	--output-block-color: #ffffaaa0;
+	--action-div-color: #a0f0c0;
+	--input-div-color: #c0d0f0a0;
+	--output-div-color: #ffffaaa0;
 
 	--normal-transparency-color: transparent;
 	--dark-transparency-color: #c08040;
@@ -79,26 +79,27 @@ input[type='file']
 	border: 2px solid var(--foreground-color);
 	border-radius: 4px;
 
+	background-color: inherit;
 	color: inherit;
 	text-decoration: none;
 	text-align: center;
 }
 
-.action-block:not(:empty)
+.action-div:not(:empty)
 {
-	background-color: var(--action-block-color);
+	background-color: var(--action-div-color);
 	padding: 20px;
 
 	text-align: center;
 }
 
-.action-block:not(:empty) + .action-block:not(:empty)
+.action-div:not(:empty) + .action-div:not(:empty)
 {
 	margin-top: -30px;
 }
 
-.input-block,
-.output-block
+.input-div,
+.output-div
 {
 	white-space: pre;
 
@@ -107,14 +108,14 @@ input[type='file']
 	text-align: center;
 }
 
-.input-block
+.input-div
 {
-	background-color: var(--input-block-color);
+	background-color: var(--input-div-color);
 }
 
-.output-block
+.output-div
 {
-	background-color: var(--output-block-color);
+	background-color: var(--output-div-color);
 }
 
 .normal-transparency
@@ -127,7 +128,7 @@ input[type='file']
 	background-color: var(--dark-transparency-color);
 }
 
-.chart_div:not(:empty)
+.chart-div:not(:empty)
 {
 	width: 100%;
 	height: 420px;
@@ -157,5 +158,5 @@ input[type='file']
 	display: block;
 
 	line-height: 0;
-	margin-bottom: 20px;
+	margin-bottom: 80px;
 }

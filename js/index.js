@@ -114,32 +114,40 @@ const spec_base =
 	data: [{}]
 };
 
-const CreateSpec = (type, interval_y, label_place, data) =>
+const CreateSpec = (type, interval_y, label_place, rows) =>
 {
 	const spec_copy = JSON.parse(JSON.stringify(spec_base));
 
 	spec_copy.legend.itemTextFormatter = e => `${e.dataPoint.name}\u2800`;
-	spec_copy.data[0].yValueFormatString = '#';
-
-	spec_copy.data[0].indexLabelPlacement = label_place;
-	spec_copy.data[0].indexLabelFontFamily = spec_font_family;
-	spec_copy.data[0].indexLabelFontSize = spec_font_size;
-	spec_copy.data[0].indexLabelFontWeight = spec_font_weight;
-	spec_copy.data[0].indexLabelFontColor = spec_foreground_color;
-
-	spec_copy.data[0].indexLabelTextAlign = 'center';
-	spec_copy.data[0].indexLabelLineThickness = 2;
-
-	spec_copy.data[0].type = type;
-	spec_copy.data[0].dataPoints = data;
-
-	if (type === 'doughnut')
-		spec_copy.data[0].innerRadius = interval_y;
-	else if (type !== 'pie')
+	if (type !== 'doughnut' && type !== 'pie')
 		spec_copy.axisY.interval = interval_y;
 
-	if (type === 'doughnut' || type === 'pie')
-		spec_copy.data[0].radius = '100%';
+	for (let i = 0; i < rows.length; ++i)
+	{
+		spec_copy.data[i].yValueFormatString = '#';
+
+		spec_copy.data[i].indexLabelPlacement = label_place;
+		spec_copy.data[i].indexLabelFontFamily = spec_font_family;
+		spec_copy.data[i].indexLabelFontSize = spec_font_size;
+		spec_copy.data[i].indexLabelFontWeight = spec_font_weight;
+		spec_copy.data[i].indexLabelFontColor = spec_foreground_color;
+
+		spec_copy.data[i].indexLabelTextAlign = 'center';
+		spec_copy.data[i].indexLabelLineThickness = 2;
+
+		spec_copy.data[i].type = type;
+		spec_copy.data[i].dataPoints = rows[i];
+
+		if (type === 'doughnut')
+			spec_copy.data[i].innerRadius = interval_y;
+		if (type === 'doughnut' || type === 'pie')
+		{
+			spec_copy.data[i].radius = '100%';
+
+			spec_copy.data[i].showInLegend = true;
+			spec_copy.data[i].indexLabel = '\u2800{name} - {y}ml - {pcs}pcs - #percent%\u2800';
+		}
+	}
 
 	return spec_copy;
 };
@@ -149,8 +157,9 @@ const charts = [];
 const CreateChart = (id, titles, spec) =>
 {
 	const element = document.getElementById(id);
+	element.insertAdjacentHTML('beforebegin', `<div class='br20'></div>`);
 	for (const title of titles)
-		element.insertAdjacentHTML('beforebegin', `<div class='action-block'>${title}</div>`);
+		element.insertAdjacentHTML('beforebegin', `<div class='action-div'>${title}</div>`);
 	if (spec.data[0].type !== 'doughnut' && spec.data[0].type !== 'pie')
 		element.insertAdjacentHTML('beforebegin', `<div class='br10'></div>`);
 
@@ -244,7 +253,7 @@ const AnalyzeBladderDiaryText = text =>
 		inputs_volume_freq_dicts.push(defaultDict(() => [0, 0]));
 		outputs_volume_freq_dicts.push(defaultDict(() => [0, 0]));
 
-		bladder_actions_div.insertAdjacentHTML('beforeend', `<div class='br20'></div><div class='action-block'>Bladder Actions - Day ${yi}</div>`);
+		bladder_actions_div.insertAdjacentHTML('beforeend', `<div class='br20'></div><div class='action-div'>Bladder Actions - Day ${yi}</div>`);
 		for (const line_day of lines_day)
 		{
 			const data_day = line_day.split(' ');
@@ -253,7 +262,7 @@ const AnalyzeBladderDiaryText = text =>
 			let class_block;
 			if (io === '+')
 			{
-				class_block = 'input-block';
+				class_block = 'input-div';
 
 				inputs_volume[y].push(volume);
 				++inputs_volume_range_dict[Math.trunc(volume / 100)];
@@ -274,7 +283,7 @@ const AnalyzeBladderDiaryText = text =>
 			}
 			else if (io === '-')
 			{
-				class_block = 'output-block';
+				class_block = 'output-div';
 
 				outputs_volume[y].push(volume);
 				++outputs_volume_range_dict[Math.trunc(volume / 100)];
@@ -305,78 +314,65 @@ const AnalyzeBladderDiaryText = text =>
 		const outputs_volume_total = outputs_volume[y].reduce((a, b) => a + b, 0);
 
 		const bladder_volume_total_data =
-		[
+		[[
 			{label: `Inputs Volume Total: ${inputs_volume[y].length}pcs`, indexLabel: `${inputs_volume_total}ml`, y: inputs_volume_total, color: '#c0d0f0'},
 			{label: `Outputs Volume Total: ${outputs_volume[y].length}pcs`, indexLabel: `${outputs_volume_total}ml`, y: outputs_volume_total, color: '#ffffaa'}
-		];
+		]];
 		const bladder_volume_total_spec = CreateSpec('column', 500, 'inside', bladder_volume_total_data);
 
-		bladder_volume_total_div.insertAdjacentHTML('beforeend', `<div id='bladder_volume_total_div_${yi}' class='chart_div'></div>`);
+		bladder_volume_total_div.insertAdjacentHTML('beforeend', `<div id='bladder_volume_total_div_${yi}' class='chart-div'></div>`);
 		CreateChart(`bladder_volume_total_div_${yi}`, [`Bladder Volume Total (ml) - ${yi}. Day`], bladder_volume_total_spec);
-		bladder_volume_total_div.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
 
-		const inputs_volume_kind_data = [];
+		const inputs_volume_kind_data = [[]];
 		for (const [key, value] of Object.entries(inputs_volume_kind_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
-			inputs_volume_kind_data.push({name: key, y: value[1], pcs: value[0]});
+			inputs_volume_kind_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const inputs_volume_kind_spec = CreateSpec('doughnut', 80, 'outside', inputs_volume_kind_data);
 
-		inputs_volume_kind_spec.data[0].indexLabel = '\u2800{name} - {y}ml - {pcs}pcs - #percent%\u2800';
-		inputs_volume_kind_spec.data[0].showInLegend = true;
-
-		inputs_volume_kind_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_kind_div_${yi}' class='chart_div'></div>`);
+		inputs_volume_kind_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_kind_div_${yi}' class='chart-div'></div>`);
 		CreateChart(`inputs_volume_kind_div_${yi}`, [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_kind_spec);
-		inputs_volume_kind_div.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
 
-		const inputs_volume_freq_data = [];
+		const inputs_volume_freq_data = [[]];
 		for (const [key, value] of Object.entries(inputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
-			inputs_volume_freq_data.push({name: key, y: value[1], pcs: value[0]});
+			inputs_volume_freq_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const inputs_volume_freq_spec = CreateSpec('pie', null, 'outside', inputs_volume_freq_data);
 
-		inputs_volume_freq_spec.data[0].indexLabel = '\u2800{name} - {y}ml - {pcs}pcs - #percent%\u2800';
-		inputs_volume_freq_spec.data[0].showInLegend = true;
-
-		inputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_freq_div_${yi}' class='chart_div'></div>`);
+		inputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_freq_div_${yi}' class='chart-div'></div>`);
 		CreateChart(`inputs_volume_freq_div_${yi}`, [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_freq_spec);
-		inputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
 
-		const outputs_volume_freq_data = [];
+		const outputs_volume_freq_data = [[]];
 		for (const [key, value] of Object.entries(outputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
-			outputs_volume_freq_data.push({name: key, y: value[1], pcs: value[0]});
+			outputs_volume_freq_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const outputs_volume_freq_spec = CreateSpec('pie', null, 'outside', outputs_volume_freq_data);
 
-		outputs_volume_freq_spec.data[0].indexLabel = '\u2800{name} - {y}ml - {pcs}pcs - #percent%\u2800';
-		outputs_volume_freq_spec.data[0].showInLegend = true;
-
-		outputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='outputs_volume_freq_div_${yi}' class='chart_div'></div>`);
+		outputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='outputs_volume_freq_div_${yi}' class='chart-div'></div>`);
 		CreateChart(`outputs_volume_freq_div_${yi}`, [`Outputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${outputs_volume_total}ml`], outputs_volume_freq_spec);
-		outputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
 	}
 
 	const [inputs_volume_min, inputs_volume_max, inputs_volume_avg, inputs_volume_med] = CalculateMinMaxAvgMed(inputs_volume.flat(1));
-	const inputs_volume_range_data = [];
+	const inputs_volume_range_data = [[]];
 	for (let i = 0; i < Object.keys(inputs_volume_range_dict).length; ++i)
-		inputs_volume_range_data.push({ label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`, indexLabel: `${inputs_volume_range_dict[i]}pcs`, y: inputs_volume_range_dict[i] });
+		inputs_volume_range_data[0].push({ label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`, indexLabel: `${inputs_volume_range_dict[i]}pcs`, y: inputs_volume_range_dict[i] });
 	const inputs_volume_range_spec = CreateSpec('column', 5, 'inside', inputs_volume_range_data);
 	CreateChart('inputs_volume_range_div', ['Inputs Volume Range (ml) - All Days', `Min: ${inputs_volume_min}ml,\u2800Max: ${inputs_volume_max}ml,\u2800Avg: ${inputs_volume_avg.toFixed(2)}ml,\u2800Med: ${inputs_volume_med.toFixed(2)}ml`], inputs_volume_range_spec);
 
 	const [inputs_time_diff_min, inputs_time_diff_max, inputs_time_diff_avg, inputs_time_diff_med] = CalculateMinMaxAvgMed(inputs_time_diff);
-	const inputs_time_diff_range_data = [];
+	const inputs_time_diff_range_data = [[]];
 	for (let i = 0; i < Object.keys(inputs_time_diff_range_dict).length; ++i)
-		inputs_time_diff_range_data.push({ label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`, indexLabel: `${inputs_time_diff_range_dict[i]}pcs`, y: inputs_time_diff_range_dict[i] });
+		inputs_time_diff_range_data[0].push({ label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`, indexLabel: `${inputs_time_diff_range_dict[i]}pcs`, y: inputs_time_diff_range_dict[i] });
 	const inputs_time_diff_range_spec = CreateSpec('column', 5, 'inside', inputs_time_diff_range_data);
 	CreateChart('inputs_time_diff_range_div', ['Inputs Time Diff Range (hr) - All Days', `Min: ${inputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${inputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${inputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${inputs_time_diff_med.toFixed(2)}hr`], inputs_time_diff_range_spec);
 
 	const [outputs_volume_min, outputs_volume_max, outputs_volume_avg, outputs_volume_med] = CalculateMinMaxAvgMed(outputs_volume.flat(1));
-	const outputs_volume_range_data = [];
+	const outputs_volume_range_data = [[]];
 	for (let i = 0; i < Object.keys(outputs_volume_range_dict).length; ++i)
-		outputs_volume_range_data.push({ label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`, indexLabel: `${outputs_volume_range_dict[i]}pcs`, y: outputs_volume_range_dict[i] });
+		outputs_volume_range_data[0].push({ label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`, indexLabel: `${outputs_volume_range_dict[i]}pcs`, y: outputs_volume_range_dict[i] });
 	const outputs_volume_range_spec = CreateSpec('column', 5, 'inside', outputs_volume_range_data);
 	CreateChart('outputs_volume_range_div', ['Outputs Volume Range (ml) - All Days', `Min: ${outputs_volume_min}ml,\u2800Max: ${outputs_volume_max}ml,\u2800Avg: ${outputs_volume_avg.toFixed(2)}ml,\u2800Med: ${outputs_volume_med.toFixed(2)}ml`], outputs_volume_range_spec);
 
 	const [outputs_time_diff_min, outputs_time_diff_max, outputs_time_diff_avg, outputs_time_diff_med] = CalculateMinMaxAvgMed(outputs_time_diff);
-	const outputs_time_diff_range_data = [];
+	const outputs_time_diff_range_data = [[]];
 	for (let i = 0; i < Object.keys(outputs_time_diff_range_dict).length; ++i)
-		outputs_time_diff_range_data.push({ label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`, indexLabel: `${outputs_time_diff_range_dict[i]}pcs`, y: outputs_time_diff_range_dict[i] });
+		outputs_time_diff_range_data[0].push({ label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`, indexLabel: `${outputs_time_diff_range_dict[i]}pcs`, y: outputs_time_diff_range_dict[i] });
 	const outputs_time_diff_range_spec = CreateSpec('column', 5, 'inside', outputs_time_diff_range_data);
 	CreateChart('outputs_time_diff_range_div', ['Outputs Time Diff Range (hr) - All Days', `Min: ${outputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${outputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${outputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${outputs_time_diff_med.toFixed(2)}hr`], outputs_time_diff_range_spec);
 };

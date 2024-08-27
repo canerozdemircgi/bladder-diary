@@ -1,10 +1,6 @@
 'use strict';
 
 const bladder_actions_div = document.getElementById('bladder_actions_div');
-const bladder_volume_total_div = document.getElementById('bladder_volume_total_div');
-const inputs_volume_kind_div = document.getElementById('inputs_volume_kind_div');
-const inputs_volume_freq_div = document.getElementById('inputs_volume_freq_div');
-const outputs_volume_freq_div = document.getElementById('outputs_volume_freq_div');
 
 const defaultDict = factory => new Proxy({},
 {
@@ -157,13 +153,16 @@ const charts = [];
 const CreateChart = (id, titles, spec) =>
 {
 	const element = document.getElementById(id);
-	element.insertAdjacentHTML('beforebegin', `<div class='br20'></div>`);
+	element.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
 	for (const title of titles)
-		element.insertAdjacentHTML('beforebegin', `<div class='action-div'>${title}</div>`);
+		element.insertAdjacentHTML('beforeend', `<div class='action-div'>${title}</div>`);
 	if (spec.data[0].type !== 'doughnut' && spec.data[0].type !== 'pie')
-		element.insertAdjacentHTML('beforebegin', `<div class='br10'></div>`);
+		element.insertAdjacentHTML('beforeend', `<div class='br10'></div>`);
 
-	const chart = new CanvasJS.Chart(id, spec);
+	const chart_container_id = `${id}_${charts.length + 1}`;
+	element.insertAdjacentHTML('beforeend', `<div id='${chart_container_id}' class='chart-div'></div>`);
+
+	const chart = new CanvasJS.Chart(chart_container_id, spec);
 	charts.push(chart);
 	chart.render();
 };
@@ -319,33 +318,25 @@ const AnalyzeBladderDiaryText = text =>
 			{label: `Outputs Volume Total: ${outputs_volume[y].length}pcs`, indexLabel: `${outputs_volume_total}ml`, y: outputs_volume_total, color: '#ffffaa'}
 		]];
 		const bladder_volume_total_spec = CreateSpec('column', 500, 'inside', bladder_volume_total_data);
-
-		bladder_volume_total_div.insertAdjacentHTML('beforeend', `<div id='bladder_volume_total_div_${yi}' class='chart-div'></div>`);
-		CreateChart(`bladder_volume_total_div_${yi}`, [`Bladder Volume Total (ml) - ${yi}. Day`], bladder_volume_total_spec);
+		CreateChart('bladder_volume_total_div', [`Bladder Volume Total (ml) - ${yi}. Day`], bladder_volume_total_spec);
 
 		const inputs_volume_kind_data = [[]];
 		for (const [key, value] of Object.entries(inputs_volume_kind_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
 			inputs_volume_kind_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const inputs_volume_kind_spec = CreateSpec('doughnut', 80, 'outside', inputs_volume_kind_data);
-
-		inputs_volume_kind_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_kind_div_${yi}' class='chart-div'></div>`);
-		CreateChart(`inputs_volume_kind_div_${yi}`, [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_kind_spec);
+		CreateChart('inputs_volume_kind_div', [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_kind_spec);
 
 		const inputs_volume_freq_data = [[]];
 		for (const [key, value] of Object.entries(inputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
 			inputs_volume_freq_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const inputs_volume_freq_spec = CreateSpec('pie', null, 'outside', inputs_volume_freq_data);
-
-		inputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='inputs_volume_freq_div_${yi}' class='chart-div'></div>`);
-		CreateChart(`inputs_volume_freq_div_${yi}`, [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_freq_spec);
+		CreateChart('inputs_volume_freq_div', [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_freq_spec);
 
 		const outputs_volume_freq_data = [[]];
 		for (const [key, value] of Object.entries(outputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
 			outputs_volume_freq_data[0].push({name: key, y: value[1], pcs: value[0]});
 		const outputs_volume_freq_spec = CreateSpec('pie', null, 'outside', outputs_volume_freq_data);
-
-		outputs_volume_freq_div.insertAdjacentHTML('beforeend', `<div id='outputs_volume_freq_div_${yi}' class='chart-div'></div>`);
-		CreateChart(`outputs_volume_freq_div_${yi}`, [`Outputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${outputs_volume_total}ml`], outputs_volume_freq_spec);
+		CreateChart('outputs_volume_freq_div', [`Outputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${outputs_volume_total}ml`], outputs_volume_freq_spec);
 	}
 
 	const [inputs_volume_min, inputs_volume_max, inputs_volume_avg, inputs_volume_med] = CalculateMinMaxAvgMed(inputs_volume.flat(1));

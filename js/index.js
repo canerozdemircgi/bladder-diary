@@ -2,6 +2,14 @@
 
 const bladder_actions_div = document.getElementById('bladder_actions_div');
 
+const multiArray = length =>
+{
+	const result = [];
+	for (let i = 0; i < length; ++i)
+		result.push([]);
+	return result;
+};
+
 const defaultDict = factory => new Proxy({},
 {
 	get: (target, name) =>
@@ -53,7 +61,7 @@ const DiffTimeAsHours = (time1, time2) =>
 CanvasJS.addColorSet('light_shades',
 [
 	'#db9293',
-	'#98dad0',
+	'#98dad8',
 	'#e0c5ad',
 	'#e4e4ad',
 	'#d1a1c7',
@@ -107,19 +115,17 @@ const spec_base =
 
 		valueFormatString: '#'
 	},
-	data: [{}]
+	data: []
 };
 
 const CreateSpec = (type, interval_y, label_place, rows) =>
 {
 	const spec_copy = JSON.parse(JSON.stringify(spec_base));
 
-	spec_copy.legend.itemTextFormatter = e => `${e.dataPoint.name}\u2800`;
-	if (type !== 'doughnut' && type !== 'pie')
-		spec_copy.axisY.interval = interval_y;
-
 	for (let i = 0; i < rows.length; ++i)
 	{
+		spec_copy.data.push({});
+
 		spec_copy.data[i].yValueFormatString = '#';
 
 		spec_copy.data[i].indexLabelPlacement = label_place;
@@ -134,23 +140,30 @@ const CreateSpec = (type, interval_y, label_place, rows) =>
 		spec_copy.data[i].type = type;
 		spec_copy.data[i].dataPoints = rows[i];
 
-		if (type === 'doughnut')
-			spec_copy.data[i].innerRadius = interval_y;
+		if (type === 'stackedColumn')
+			spec_copy.data[i].showInLegend = true;
 		if (type === 'doughnut' || type === 'pie')
 		{
 			spec_copy.data[i].radius = '100%';
+			if (type === 'doughnut')
+				spec_copy.data[i].innerRadius = interval_y;
 
 			spec_copy.data[i].showInLegend = true;
 			spec_copy.data[i].indexLabel = '\u2800{name} - {y}ml - {pcs}pcs - #percent%\u2800';
 		}
 	}
 
+	if (type !== 'stackedColumn')
+		spec_copy.legend.itemTextFormatter = e => `${e.dataPoint.name}\u2800`;
+	if (type !== 'doughnut' && type !== 'pie')
+		spec_copy.axisY.interval = interval_y;
+
 	return spec_copy;
 };
 
 const charts = [];
 
-const CreateChart = (id, titles, spec) =>
+const CreateChart = (id, titles, height, spec) =>
 {
 	const element = document.getElementById(id);
 	element.insertAdjacentHTML('beforeend', `<div class='br20'></div>`);
@@ -160,7 +173,7 @@ const CreateChart = (id, titles, spec) =>
 		element.insertAdjacentHTML('beforeend', `<div class='br10'></div>`);
 
 	const chart_container_id = `${id}_${charts.length + 1}`;
-	element.insertAdjacentHTML('beforeend', `<div id='${chart_container_id}' class='chart-div'></div>`);
+	element.insertAdjacentHTML('beforeend', `<div id='${chart_container_id}' class='chart-div' style='height: ${height}px'></div>`);
 
 	const chart = new CanvasJS.Chart(chart_container_id, spec);
 	charts.push(chart);
@@ -203,6 +216,12 @@ document.getElementById('file_open_input').onchange = event_input =>
 	file_reader.readAsText(file);
 };
 
+const Freqs = Object.freeze(
+{
+	AWAKE: 'Awake',
+	SLEEP: 'Sleep'
+});
+
 const AnalyzeBladderDiaryText = text =>
 {
 	const lines_all = text.split('\n----------------\n');
@@ -226,16 +245,32 @@ const AnalyzeBladderDiaryText = text =>
 	const inputs_volume_freq_dicts = [];
 	const outputs_volume_freq_dicts = [];
 
-	const inputs_volume_range_dict = defaultDict(() => 0);
+	const inputs_volume_range_dict =
+	{
+		[Freqs.AWAKE]: defaultDict(() => 0),
+		[Freqs.SLEEP]: defaultDict(() => 0)
+	};
 
 	const inputs_time_diff = [];
-	const inputs_time_diff_range_dict = defaultDict(() => 0);
+	const inputs_time_diff_range_dict =
+	{
+		[Freqs.AWAKE]: defaultDict(() => 0),
+		[Freqs.SLEEP]: defaultDict(() => 0)
+	};
 	let input_time_prev = null;
 
-	const outputs_volume_range_dict = defaultDict(() => 0);
+	const outputs_volume_range_dict =
+	{
+		[Freqs.AWAKE]: defaultDict(() => 0),
+		[Freqs.SLEEP]: defaultDict(() => 0)
+	};
 
 	const outputs_time_diff = [];
-	const outputs_time_diff_range_dict = defaultDict(() => 0);
+	const outputs_time_diff_range_dict =
+	{
+		[Freqs.AWAKE]: defaultDict(() => 0),
+		[Freqs.SLEEP]: defaultDict(() => 0)
+	};
 	let output_time_prev = null;
 
 	for (let y = 0; y < lines_all.length - 1; ++y)
@@ -264,13 +299,13 @@ const AnalyzeBladderDiaryText = text =>
 				class_block = 'input-div';
 
 				inputs_volume[y].push(volume);
-				++inputs_volume_range_dict[Math.trunc(volume / 100)];
+				++inputs_volume_range_dict[freq][Math.trunc(volume / 100)];
 
 				if (input_time_prev !== null)
 				{
 					const input_time_diff = DiffTimeAsHours(time, input_time_prev);
 					inputs_time_diff.push(input_time_diff);
-					++inputs_time_diff_range_dict[Math.trunc(input_time_diff)];
+					++inputs_time_diff_range_dict[freq][Math.trunc(input_time_diff)];
 				}
 				input_time_prev = time;
 
@@ -285,13 +320,13 @@ const AnalyzeBladderDiaryText = text =>
 				class_block = 'output-div';
 
 				outputs_volume[y].push(volume);
-				++outputs_volume_range_dict[Math.trunc(volume / 100)];
+				++outputs_volume_range_dict[freq][Math.trunc(volume / 100)];
 
 				if (output_time_prev !== null)
 				{
 					const output_time_diff = DiffTimeAsHours(time, output_time_prev);
 					outputs_time_diff.push(output_time_diff);
-					++outputs_time_diff_range_dict[Math.trunc(output_time_diff)];
+					++outputs_time_diff_range_dict[freq][Math.trunc(output_time_diff)];
 				}
 				output_time_prev = time;
 
@@ -300,9 +335,9 @@ const AnalyzeBladderDiaryText = text =>
 			}
 
 			let class_transparency;
-			if (freq === 'Awake')
+			if (freq === Freqs.AWAKE)
 				class_transparency = 'normal-transparency';
-			else if (freq === 'Sleep')
+			else if (freq === Freqs.SLEEP)
 				class_transparency = 'dark-transparency';
 
 			data_day[1] = `Day=${yi} ${time}`;
@@ -328,7 +363,7 @@ const AnalyzeBladderDiaryText = text =>
 			}
 		]];
 		const bladder_volume_total_spec = CreateSpec('column', 500, 'inside', bladder_volume_total_data);
-		CreateChart('bladder_volume_total_div', [`Bladder Volume Total (ml) - ${yi}. Day`], bladder_volume_total_spec);
+		CreateChart('bladder_volume_total_div', [`Bladder Volume Total (ml) - ${yi}. Day`], 420, bladder_volume_total_spec);
 
 		const inputs_volume_kind_data = [[]];
 		for (const [key, value] of Object.entries(inputs_volume_kind_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
@@ -341,10 +376,10 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 		const inputs_volume_kind_spec = CreateSpec('doughnut', 80, 'outside', inputs_volume_kind_data);
-		CreateChart('inputs_volume_kind_div', [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_kind_spec);
+		CreateChart('inputs_volume_kind_div', [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], 420, inputs_volume_kind_spec);
 
 		const inputs_volume_freq_data = [[]];
-		for (const [key, value] of Object.entries(inputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
+		for (const [key, value] of Object.entries(inputs_volume_freq_dicts[y]).sort(([keyA,], [keyB,]) => keyB.localeCompare(keyA)))
 		{
 			inputs_volume_freq_data[0].push(
 			{
@@ -354,10 +389,10 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 		const inputs_volume_freq_spec = CreateSpec('pie', null, 'outside', inputs_volume_freq_data);
-		CreateChart('inputs_volume_freq_div', [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], inputs_volume_freq_spec);
+		CreateChart('inputs_volume_freq_div', [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], 420, inputs_volume_freq_spec);
 
 		const outputs_volume_freq_data = [[]];
-		for (const [key, value] of Object.entries(outputs_volume_freq_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
+		for (const [key, value] of Object.entries(outputs_volume_freq_dicts[y]).sort(([keyA,], [keyB,]) => keyB.localeCompare(keyA)))
 		{
 			outputs_volume_freq_data[0].push(
 			{
@@ -367,62 +402,99 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 		const outputs_volume_freq_spec = CreateSpec('pie', null, 'outside', outputs_volume_freq_data);
-		CreateChart('outputs_volume_freq_div', [`Outputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${outputs_volume_total}ml`], outputs_volume_freq_spec);
+		CreateChart('outputs_volume_freq_div', [`Outputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${outputs_volume_total}ml`], 420, outputs_volume_freq_spec);
 	}
+	
+	const freqs_length = Object.keys(Freqs).length;
+	const freqs_values = Object.values(Freqs);
 
 	const [inputs_volume_min, inputs_volume_max, inputs_volume_avg, inputs_volume_med] = CalculateMinMaxAvgMed(inputs_volume.flat(1));
-	const inputs_volume_range_data = [[]];
-	for (let i = 0; i < Object.keys(inputs_volume_range_dict).length; ++i)
+	const inputs_volume_range_data = multiArray(freqs_length);
+	freqs_values.forEach((freq, i) =>
 	{
-		inputs_volume_range_data[0].push(
+		for (let j = 0; j < Object.keys(inputs_volume_range_dict[freq]).length; ++j)
 		{
-			label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`,
-			y: inputs_volume_range_dict[i],
-			indexLabel: `${inputs_volume_range_dict[i]}pcs`
-		});
-	}
-	const inputs_volume_range_spec = CreateSpec('column', 5, 'inside', inputs_volume_range_data);
-	CreateChart('inputs_volume_range_div', ['Inputs Volume Range (ml) - All Days', `Min: ${inputs_volume_min}ml,\u2800Max: ${inputs_volume_max}ml,\u2800Avg: ${inputs_volume_avg.toFixed(2)}ml,\u2800Med: ${inputs_volume_med.toFixed(2)}ml`], inputs_volume_range_spec);
+			inputs_volume_range_data[i].push(
+			{
+				name: freq,
+				label: `${String(j * 100).padStart(3, '0')} - ${String((j + 1) * 100 - 1).padStart(3, '0')} ml`,
+				y: inputs_volume_range_dict[freq][j]/*,
+				indexLabel: `${inputs_volume_range_dict[freq][j]}pcs`*/
+			});
+		}
+	});
+	const inputs_volume_range_spec = CreateSpec('stackedColumn', 2, 'inside', inputs_volume_range_data);
+	CreateChart('inputs_volume_range_div',
+	[
+		'Inputs Volume Range (ml) - All Days',
+		`Min: ${inputs_volume_min}ml,\u2800Max: ${inputs_volume_max}ml,\u2800Avg: ${inputs_volume_avg.toFixed(2)}ml,\u2800Med: ${inputs_volume_med.toFixed(2)}ml`
+	],
+	540, inputs_volume_range_spec);
 
 	const [inputs_time_diff_min, inputs_time_diff_max, inputs_time_diff_avg, inputs_time_diff_med] = CalculateMinMaxAvgMed(inputs_time_diff);
-	const inputs_time_diff_range_data = [[]];
-	for (let i = 0; i < Object.keys(inputs_time_diff_range_dict).length; ++i)
+	const inputs_time_diff_range_data = multiArray(freqs_length);
+	freqs_values.forEach((freq, i) =>
 	{
-		inputs_time_diff_range_data[0].push(
+		for (let j = 0; j < Object.keys(inputs_time_diff_range_dict[freq]).length; ++j)
 		{
-			label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`,
-			y: inputs_time_diff_range_dict[i],
-			indexLabel: `${inputs_time_diff_range_dict[i]}pcs`
-		});
-	}
-	const inputs_time_diff_range_spec = CreateSpec('column', 5, 'inside', inputs_time_diff_range_data);
-	CreateChart('inputs_time_diff_range_div', ['Inputs Time Diff Range (hr) - All Days', `Min: ${inputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${inputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${inputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${inputs_time_diff_med.toFixed(2)}hr`], inputs_time_diff_range_spec);
+			inputs_time_diff_range_data[i].push(
+			{
+				name: freq,
+				label: `${j.toFixed(2)} - ${j + 1 - 0.01} hr`,
+				y: inputs_time_diff_range_dict[freq][j]/*,
+				indexLabel: `${inputs_time_diff_range_dict[freq][j]}pcs`*/
+			});
+		}
+	});
+	const inputs_time_diff_range_spec = CreateSpec('stackedColumn', 2, 'inside', inputs_time_diff_range_data);
+	CreateChart('inputs_time_diff_range_div',
+	[
+		'Inputs Time Diff Range (hr) - All Days',
+		`Min: ${inputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${inputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${inputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${inputs_time_diff_med.toFixed(2)}hr`
+	], 540, inputs_time_diff_range_spec);
 
 	const [outputs_volume_min, outputs_volume_max, outputs_volume_avg, outputs_volume_med] = CalculateMinMaxAvgMed(outputs_volume.flat(1));
-	const outputs_volume_range_data = [[]];
-	for (let i = 0; i < Object.keys(outputs_volume_range_dict).length; ++i)
+	const outputs_volume_range_data = multiArray(freqs_length);
+	freqs_values.forEach((freq, i) =>
 	{
-		outputs_volume_range_data[0].push(
+		for (let j = 0; j < Object.keys(outputs_volume_range_dict[freq]).length; ++j)
 		{
-			label: `${String(i * 100).padStart(3, '0')} - ${String((i + 1) * 100 - 1).padStart(3, '0')} ml`,
-			y: outputs_volume_range_dict[i],
-			indexLabel: `${outputs_volume_range_dict[i]}pcs`
-		});
-	}
-	const outputs_volume_range_spec = CreateSpec('column', 5, 'inside', outputs_volume_range_data);
-	CreateChart('outputs_volume_range_div', ['Outputs Volume Range (ml) - All Days', `Min: ${outputs_volume_min}ml,\u2800Max: ${outputs_volume_max}ml,\u2800Avg: ${outputs_volume_avg.toFixed(2)}ml,\u2800Med: ${outputs_volume_med.toFixed(2)}ml`], outputs_volume_range_spec);
+			outputs_volume_range_data[i].push(
+			{
+				name: freq,
+				label: `${String(j * 100).padStart(3, '0')} - ${String((j + 1) * 100 - 1).padStart(3, '0')} ml`,
+				y: outputs_volume_range_dict[freq][j]/*,
+				indexLabel: `${outputs_volume_range_dict[freq][j]}pcs`*/
+			});
+		}
+	});
+	const outputs_volume_range_spec = CreateSpec('stackedColumn', 2, 'inside', outputs_volume_range_data);
+	CreateChart('outputs_volume_range_div',
+	[
+		'Outputs Volume Range (ml) - All Days',
+		`Min: ${outputs_volume_min}ml,\u2800Max: ${outputs_volume_max}ml,\u2800Avg: ${outputs_volume_avg.toFixed(2)}ml,\u2800Med: ${outputs_volume_med.toFixed(2)}ml`
+	],
+	540, outputs_volume_range_spec);
 
 	const [outputs_time_diff_min, outputs_time_diff_max, outputs_time_diff_avg, outputs_time_diff_med] = CalculateMinMaxAvgMed(outputs_time_diff);
-	const outputs_time_diff_range_data = [[]];
-	for (let i = 0; i < Object.keys(outputs_time_diff_range_dict).length; ++i)
+	const outputs_time_diff_range_data = multiArray(freqs_length);
+	freqs_values.forEach((freq, i) =>
 	{
-		outputs_time_diff_range_data[0].push(
+		for (let j = 0; j < Object.keys(outputs_time_diff_range_dict[freq]).length; ++j)
 		{
-			label: `${i.toFixed(2)} - ${i + 1 - 0.01} hr`,
-			y: outputs_time_diff_range_dict[i],
-			indexLabel: `${outputs_time_diff_range_dict[i]}pcs`
-		});
-	}
-	const outputs_time_diff_range_spec = CreateSpec('column', 5, 'inside', outputs_time_diff_range_data);
-	CreateChart('outputs_time_diff_range_div', ['Outputs Time Diff Range (hr) - All Days', `Min: ${outputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${outputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${outputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${outputs_time_diff_med.toFixed(2)}hr`], outputs_time_diff_range_spec);
+			outputs_time_diff_range_data[i].push(
+			{
+				name: freq,
+				label: `${j.toFixed(2)} - ${j + 1 - 0.01} hr`,
+				y: outputs_time_diff_range_dict[freq][j]/*,
+				indexLabel: `${outputs_time_diff_range_dict[freq][j]}pcs`*/
+			});
+		}
+	});
+	const outputs_time_diff_range_spec = CreateSpec('stackedColumn', 2, 'inside', outputs_time_diff_range_data);
+	CreateChart('outputs_time_diff_range_div',
+	[
+		'Outputs Time Diff Range (hr) - All Days',
+		`Min: ${outputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${outputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${outputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${outputs_time_diff_med.toFixed(2)}hr`
+	], 540, outputs_time_diff_range_spec);
 };

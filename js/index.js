@@ -2,11 +2,11 @@
 
 const bladder_actions_div = document.getElementById('bladder_actions_div');
 
-const multiArray = length =>
+const multiArray = (length, factory) =>
 {
 	const result = [];
 	for (let i = 0; i < length; ++i)
-		result.push([]);
+		result.push(factory());
 	return result;
 };
 
@@ -141,7 +141,8 @@ const CreateSpec = (type, interval_y, label_place, rows) =>
 		spec_copy.data[i].indexLabelLineThickness = 2;
 
 		spec_copy.data[i].type = type;
-		spec_copy.data[i].dataPoints = rows[i];
+		for (const [row_key, row_value] of Object.entries(rows[i]))
+			spec_copy.data[i][row_key] = row_value;
 
 		if (type === 'stackedColumn')
 			spec_copy.data[i].showInLegend = true;
@@ -156,8 +157,15 @@ const CreateSpec = (type, interval_y, label_place, rows) =>
 		}
 	}
 
-	if (type !== 'stackedColumn')
-		spec_copy.legend.itemTextFormatter = e => `${e.dataPoint.name}\u2800`;
+	spec_copy.legend.itemTextFormatter = e =>
+	{
+		if (e.dataPoint !== null)
+			return `${e.dataPoint.name}\u2800`
+		else if (e.dataSeries !== null)
+			return `${e.dataSeries.name}\u2800`
+		else
+			return '!!!';
+	};
 	if (type !== 'doughnut' && type !== 'pie')
 		spec_copy.axisY.interval = interval_y;
 
@@ -351,27 +359,30 @@ const AnalyzeBladderDiaryText = text =>
 		const outputs_volume_total = outputs_volume[y].reduce((a, b) => a + b, 0);
 
 		const bladder_volume_total_data =
-		[[
-			{
-				label: `Inputs Volume Total: ${inputs_volume[y].length}pcs`,
-				y: inputs_volume_total,
-				indexLabel: `${inputs_volume_total}ml`,
-				color: '#c0d0f0'
-			},
-			{
-				label: `Outputs Volume Total: ${outputs_volume[y].length}pcs`,
-				y: outputs_volume_total,
-				indexLabel: `${outputs_volume_total}ml`,
-				color: '#ffffaa'
-			}
-		]];
+		[{
+			dataPoints:
+			[
+				{
+					label: `Inputs Volume Total: ${inputs_volume[y].length}pcs`,
+					y: inputs_volume_total,
+					indexLabel: `${inputs_volume_total}ml`,
+					color: '#c0d0f0'
+				},
+				{
+					label: `Outputs Volume Total: ${outputs_volume[y].length}pcs`,
+					y: outputs_volume_total,
+					indexLabel: `${outputs_volume_total}ml`,
+					color: '#ffffaa'
+				}
+			]
+		}];
 		const bladder_volume_total_spec = CreateSpec('column', 500, 'inside', bladder_volume_total_data);
 		CreateChart('bladder_volume_total_div', [`Bladder Volume Total (ml) - ${yi}. Day`], 420, bladder_volume_total_spec);
 
-		const inputs_volume_kind_data = [[]];
+		const inputs_volume_kind_data = [{dataPoints: []}];
 		for (const [key, value] of Object.entries(inputs_volume_kind_dicts[y]).sort(([, valueA], [, valueB]) => valueB[1] - valueA[1]))
 		{
-			inputs_volume_kind_data[0].push(
+			inputs_volume_kind_data[0].dataPoints.push(
 			{
 				name: key,
 				y: value[1],
@@ -381,10 +392,10 @@ const AnalyzeBladderDiaryText = text =>
 		const inputs_volume_kind_spec = CreateSpec('doughnut', 80, 'outside', inputs_volume_kind_data);
 		CreateChart('inputs_volume_kind_div', [`Inputs Kind (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], 420, inputs_volume_kind_spec);
 
-		const inputs_volume_freq_data = [[]];
+		const inputs_volume_freq_data = [{dataPoints: []}];
 		for (const [key, value] of Object.entries(inputs_volume_freq_dicts[y]).sort(([keyA,], [keyB,]) => keyB.localeCompare(keyA)))
 		{
-			inputs_volume_freq_data[0].push(
+			inputs_volume_freq_data[0].dataPoints.push(
 			{
 				name: key,
 				y: value[1],
@@ -394,10 +405,10 @@ const AnalyzeBladderDiaryText = text =>
 		const inputs_volume_freq_spec = CreateSpec('pie', null, 'outside', inputs_volume_freq_data);
 		CreateChart('inputs_volume_freq_div', [`Inputs Diurnal | Nocturnal Freq (ml) - ${yi}. Day`, `Total: ${inputs_volume_total}ml`], 420, inputs_volume_freq_spec);
 
-		const outputs_volume_freq_data = [[]];
+		const outputs_volume_freq_data = [{dataPoints: []}];
 		for (const [key, value] of Object.entries(outputs_volume_freq_dicts[y]).sort(([keyA,], [keyB,]) => keyB.localeCompare(keyA)))
 		{
-			outputs_volume_freq_data[0].push(
+			outputs_volume_freq_data[0].dataPoints.push(
 			{
 				name: key,
 				y: value[1],
@@ -409,17 +420,17 @@ const AnalyzeBladderDiaryText = text =>
 	}
 	
 	const freqs_length = Object.keys(Freqs).length;
-	const freqs_values = Object.values(Freqs);
+	const freqs_values = Object.values(Freqs).sort((A, B) => B.localeCompare(A));
 
 	const [inputs_volume_min, inputs_volume_max, inputs_volume_avg, inputs_volume_med] = CalculateMinMaxAvgMed(inputs_volume.flat(1));
-	const inputs_volume_range_data = multiArray(freqs_length);
+	const inputs_volume_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
 	freqs_values.forEach((freq, i) =>
 	{
+		inputs_volume_range_data[i].name = freq;
 		for (let j = 0; j < Object.keys(inputs_volume_range_dict[freq]).length; ++j)
 		{
-			inputs_volume_range_data[i].push(
+			inputs_volume_range_data[i].dataPoints.push(
 			{
-				name: freq,
 				label: `${String(j * 100).padStart(3, '0')} - ${String((j + 1) * 100 - 1).padStart(3, '0')} ml`,
 				y: inputs_volume_range_dict[freq][j]/*,
 				indexLabel: `${inputs_volume_range_dict[freq][j]}pcs`*/
@@ -435,14 +446,14 @@ const AnalyzeBladderDiaryText = text =>
 	420, inputs_volume_range_spec);
 
 	const [inputs_time_diff_min, inputs_time_diff_max, inputs_time_diff_avg, inputs_time_diff_med] = CalculateMinMaxAvgMed(inputs_time_diff);
-	const inputs_time_diff_range_data = multiArray(freqs_length);
+	const inputs_time_diff_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
 	freqs_values.forEach((freq, i) =>
 	{
+		inputs_time_diff_range_data[i].name = freq;
 		for (let j = 0; j < Object.keys(inputs_time_diff_range_dict[freq]).length; ++j)
 		{
-			inputs_time_diff_range_data[i].push(
+			inputs_time_diff_range_data[i].dataPoints.push(
 			{
-				name: freq,
 				label: `${j.toFixed(2)} - ${j + 1 - 0.01} hr`,
 				y: inputs_time_diff_range_dict[freq][j]/*,
 				indexLabel: `${inputs_time_diff_range_dict[freq][j]}pcs`*/
@@ -457,14 +468,14 @@ const AnalyzeBladderDiaryText = text =>
 	], 420, inputs_time_diff_range_spec);
 
 	const [outputs_volume_min, outputs_volume_max, outputs_volume_avg, outputs_volume_med] = CalculateMinMaxAvgMed(outputs_volume.flat(1));
-	const outputs_volume_range_data = multiArray(freqs_length);
+	const outputs_volume_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
 	freqs_values.forEach((freq, i) =>
 	{
+		outputs_volume_range_data[i].name = freq;
 		for (let j = 0; j < Object.keys(outputs_volume_range_dict[freq]).length; ++j)
 		{
-			outputs_volume_range_data[i].push(
+			outputs_volume_range_data[i].dataPoints.push(
 			{
-				name: freq,
 				label: `${String(j * 100).padStart(3, '0')} - ${String((j + 1) * 100 - 1).padStart(3, '0')} ml`,
 				y: outputs_volume_range_dict[freq][j]/*,
 				indexLabel: `${outputs_volume_range_dict[freq][j]}pcs`*/
@@ -480,14 +491,14 @@ const AnalyzeBladderDiaryText = text =>
 	420, outputs_volume_range_spec);
 
 	const [outputs_time_diff_min, outputs_time_diff_max, outputs_time_diff_avg, outputs_time_diff_med] = CalculateMinMaxAvgMed(outputs_time_diff);
-	const outputs_time_diff_range_data = multiArray(freqs_length);
+	const outputs_time_diff_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
 	freqs_values.forEach((freq, i) =>
 	{
+		outputs_time_diff_range_data[i].name = freq;
 		for (let j = 0; j < Object.keys(outputs_time_diff_range_dict[freq]).length; ++j)
 		{
-			outputs_time_diff_range_data[i].push(
+			outputs_time_diff_range_data[i].dataPoints.push(
 			{
-				name: freq,
 				label: `${j.toFixed(2)} - ${j + 1 - 0.01} hr`,
 				y: outputs_time_diff_range_dict[freq][j]/*,
 				indexLabel: `${outputs_time_diff_range_dict[freq][j]}pcs`*/

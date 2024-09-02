@@ -82,6 +82,7 @@ const spec_base =
 
 	colorSet: 'light_shades',
 	backgroundColor: spec_background_color,
+	
 	legend:
 	{
 		fontFamily: spec_font_family,

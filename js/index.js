@@ -58,7 +58,9 @@ const DiffTimeAsHours = (time1, time2) =>
 	return result;
 };
 
-CanvasJS.addColorSet('light_shades',
+const spec_color_set = 'light_shades';
+
+CanvasJS.addColorSet(spec_color_set,
 [
 	'#db9293',
 	'#98dad8',
@@ -80,9 +82,9 @@ const spec_base =
 {
 	interactivityEnabled: false,
 
-	colorSet: 'light_shades',
+	colorSet: spec_color_set,
 	backgroundColor: spec_background_color,
-	
+
 	legend:
 	{
 		fontFamily: spec_font_family,

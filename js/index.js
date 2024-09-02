@@ -437,13 +437,12 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 	});
-	const inputs_volume_range_spec = CreateSpec('stackedColumn', 5, 'inside', inputs_volume_range_data);
+	const inputs_volume_range_spec = CreateSpec('stackedColumn', 2, 'inside', inputs_volume_range_data);
 	CreateChart('inputs_volume_range_div',
 	[
 		'Inputs Volume Range (ml) - All Days',
 		`Min: ${inputs_volume_min}ml,\u2800Max: ${inputs_volume_max}ml,\u2800Avg: ${inputs_volume_avg.toFixed(2)}ml,\u2800Med: ${inputs_volume_med.toFixed(2)}ml`
-	],
-	420, inputs_volume_range_spec);
+	], 660, inputs_volume_range_spec);
 
 	const [inputs_time_diff_min, inputs_time_diff_max, inputs_time_diff_avg, inputs_time_diff_med] = CalculateMinMaxAvgMed(inputs_time_diff);
 	const inputs_time_diff_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
@@ -460,12 +459,12 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 	});
-	const inputs_time_diff_range_spec = CreateSpec('stackedColumn', 5, 'inside', inputs_time_diff_range_data);
+	const inputs_time_diff_range_spec = CreateSpec('stackedColumn', 2, 'inside', inputs_time_diff_range_data);
 	CreateChart('inputs_time_diff_range_div',
 	[
 		'Inputs Time Diff Range (hr) - All Days',
 		`Min: ${inputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${inputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${inputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${inputs_time_diff_med.toFixed(2)}hr`
-	], 420, inputs_time_diff_range_spec);
+	], 660, inputs_time_diff_range_spec);
 
 	const [outputs_volume_min, outputs_volume_max, outputs_volume_avg, outputs_volume_med] = CalculateMinMaxAvgMed(outputs_volume.flat(1));
 	const outputs_volume_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
@@ -482,13 +481,12 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 	});
-	const outputs_volume_range_spec = CreateSpec('stackedColumn', 5, 'inside', outputs_volume_range_data);
+	const outputs_volume_range_spec = CreateSpec('stackedColumn', 2, 'inside', outputs_volume_range_data);
 	CreateChart('outputs_volume_range_div',
 	[
 		'Outputs Volume Range (ml) - All Days',
 		`Min: ${outputs_volume_min}ml,\u2800Max: ${outputs_volume_max}ml,\u2800Avg: ${outputs_volume_avg.toFixed(2)}ml,\u2800Med: ${outputs_volume_med.toFixed(2)}ml`
-	],
-	420, outputs_volume_range_spec);
+	], 660, outputs_volume_range_spec);
 
 	const [outputs_time_diff_min, outputs_time_diff_max, outputs_time_diff_avg, outputs_time_diff_med] = CalculateMinMaxAvgMed(outputs_time_diff);
 	const outputs_time_diff_range_data = multiArray(freqs_length, () => ({dataPoints: []}));
@@ -505,10 +503,10 @@ const AnalyzeBladderDiaryText = text =>
 			});
 		}
 	});
-	const outputs_time_diff_range_spec = CreateSpec('stackedColumn', 5, 'inside', outputs_time_diff_range_data);
+	const outputs_time_diff_range_spec = CreateSpec('stackedColumn', 2, 'inside', outputs_time_diff_range_data);
 	CreateChart('outputs_time_diff_range_div',
 	[
 		'Outputs Time Diff Range (hr) - All Days',
 		`Min: ${outputs_time_diff_min.toFixed(2)}hr,\u2800Max: ${outputs_time_diff_max.toFixed(2)}hr,\u2800Avg: ${outputs_time_diff_avg.toFixed(2)}hr,\u2800Med: ${outputs_time_diff_med.toFixed(2)}hr`
-	], 420, outputs_time_diff_range_spec);
+	], 660, outputs_time_diff_range_spec);
 };

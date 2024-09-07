@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+
+<html lang='en-US'>
+
+<head>
+
+	<meta charset='UTF-8'>
+	<!-- <meta name='viewport' content='width=device-width, initial-scale=1'> -->
+	<title>Bladder Diary</title>
+	<link rel='icon' href='resource/icon/window.svg'>
+
+	<link rel='preconnect' href='https://fonts.googleapis.com'>
+	<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+	<link href='https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap' rel='stylesheet'>
+	<link href='https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap' rel='stylesheet'>
+
+	<link rel='stylesheet' href='css/index.css'>
+
+	<script defer src='resource/library/canvasjs/canvasjs_3.10.4.min.js'></script>
+
+	<script defer src='js/index.js'></script>
+
+</head>
+
+<body>
+
+	<div class='action-div header'>BLADDER DIARY</div>
+	<div class='action-div version'>Version: <span id='version_website'>x.x.xx</span></div>
+	<div class='br20'></div>
+
+	<div class='action-div'>
+		developed and designed by Caner Özdemir
+		<div class='br05'></div>
+		<div class='sign'>Next Generation Computed Imagination</div>
+	</div>
+	<div class='br20'></div>
+
+	<div class='unprint'>
+		<label for='file_open_input' class='button'>Open Bladder Diary File</label>
+		<input id='file_open_input' type='file'/>
+		<div class='br10'></div>
+		<a class='button' href='bladder diary.txt' download>Download Example Bladder Diary File</a>
+		<div class='br10'></div>
+		<button id='print_button' class='button'>Print Bladder Diary As Pdf</button>
+	</div>
+	<div class='br20'></div>
+
+	<div id='credentials_div' class='action-div'></div>
+
+	<div id='bladder_actions_div'></div>
+
+	<div id='bladder_volume_total_div'></div>
+	<div id='inputs_volume_kind_div'></div>
+	<div id='inputs_volume_freq_div'></div>
+	<div id='outputs_volume_freq_div'></div>
+
+	<div id='inputs_volume_range_div'></div>
+	<div id='inputs_time_diff_range_div'></div>
+	<div id='outputs_volume_range_div'></div>
+	<div id='outputs_time_diff_range_div'></div>
+
+</body>
+
+</html>

@@ -1,0 +1,172 @@
+@font-face
+{
+	font-family: 'TeX Gyre Chorus';
+	font-style: normal;
+	font-weight: 400;
+	src: url('../resource/font/texgyrechorus-mediumitalic.otf');
+	font-display: swap;
+}
+
+:root
+{
+	--background-color: #f0f0f0;
+	--foreground-color: #202020;
+
+	--action-div-color: #a0f0c0;
+	--input-div-color: #c0d0f0a0;
+	--output-div-color: #ffffaaa0;
+
+	--normal-transparency-color: transparent;
+	--dark-transparency-color: #c08040;
+}
+
+*
+{
+	box-sizing: border-box;
+	max-height: 999999px;
+	font: inherit;
+	letter-spacing: 0.125px;
+
+	print-color-adjust: exact !important;
+	-webkit-print-color-adjust: exact !important;
+}
+
+body, input
+{
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
+
+	font: 20px 'Roboto', sans-serif;
+	line-height: 1;
+
+	background-color: var(--background-color);
+	color: var(--foreground-color);
+}
+
+body
+{
+	margin: 0;
+}
+
+.header
+{
+	font-weight: 600;
+}
+
+.version
+{
+	font-size: smaller;
+}
+
+.sign
+{
+	font: 22px/24px 'TeX Gyre Chorus', sans-serif;
+	letter-spacing: 1px;
+}
+
+.unprint
+{
+	display: grid;
+	grid-template-columns: max-content;
+	justify-content: center;
+}
+
+input[type='file']
+{
+	display: none;
+}
+
+.button
+{
+	cursor: pointer;
+	padding: 20px;
+
+	border: 2px solid var(--foreground-color);
+	border-radius: 4px;
+
+	background-color: inherit;
+	color: inherit;
+	text-decoration: none;
+	text-align: center;
+}
+
+.action-div:not(:empty)
+{
+	background-color: var(--action-div-color);
+	padding: 20px;
+
+	text-align: center;
+}
+
+.action-div:not(:empty) + .action-div:not(:empty)
+{
+	margin-top: -30px;
+}
+
+.input-div,
+.output-div
+{
+	white-space: pre;
+
+	font: 20px 'Roboto Mono', monospace;
+	padding: 5px;
+	text-align: center;
+}
+
+.input-div
+{
+	background-color: var(--input-div-color);
+}
+
+.output-div
+{
+	background-color: var(--output-div-color);
+}
+
+.normal-transparency
+{
+	background-color: var(--normal-transparency-color);
+}
+
+.dark-transparency
+{
+	background-color: var(--dark-transparency-color);
+}
+
+.chart-div:empty
+{
+	width: 0;
+	height: 0;
+}
+
+.chart-div:not(:empty)
+{
+	width: 100%;
+}
+
+.br05
+{
+	content: '';
+	display: block;
+
+	line-height: 0;
+	margin-bottom: 5px;
+}
+
+.br10
+{
+	content: '';
+	display: block;
+
+	line-height: 0;
+	margin-bottom: 10px;
+}
+
+.br20
+{
+	content: '';
+	display: block;
+
+	line-height: 0;
+	margin-bottom: 20px;
+}
